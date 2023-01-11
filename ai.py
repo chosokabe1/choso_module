@@ -142,3 +142,20 @@ def onlyio(model, dataloaders):
     outputs_list.append(outputs)
 
   return outputs_list
+
+def classio(model, dataloaders):
+  device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+  model.eval()
+  preds_list = []
+  for input in dataloaders:
+    input = input.to(device)
+    # optimizer.zero_grad()
+    outputs = model(input)
+    m = nn.Softmax(dim=1)
+    outputs = m(outputs)
+    _, preds = torch.max(outputs, 1)
+
+    preds = preds.to('cpu').detach().numpy().copy()
+    preds_list.append(preds)
+
+  return preds_list
