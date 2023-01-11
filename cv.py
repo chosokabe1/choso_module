@@ -53,6 +53,21 @@ def anaume(img):
   anaume_img = cv2.bitwise_or(th_clean, th_clean_not_clean)
   return anaume_img
 
+def anaume_FixedThreshold(img, fixed_threshold):
+  kernel_ellipse = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+  gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+  ret, th = cv2.threshold(gray, fixed_threshold, 255, cv2.THRESH_BINARY_INV)
+  th = cv2.morphologyEx(th, cv2.MORPH_OPEN, kernel_ellipse)
+  th = cv2.morphologyEx(th, cv2.MORPH_CLOSE, kernel_ellipse)
+  th_clean = remove_objects(th, lower_size=30000, upper_size=None)
+  th_clean = th_clean.astype(np.uint8)
+  th_clean = cv2.morphologyEx(th_clean, cv2.MORPH_CLOSE, kernel_ellipse, iterations=2)
+  th_clean_not = cv2.bitwise_not(th_clean)
+  th_clean_not_clean = remove_objects(th_clean_not, lower_size=None, upper_size=10000)
+  th_clean_not_clean = th_clean_not_clean.astype(np.uint8)
+  anaume_img = cv2.bitwise_or(th_clean, th_clean_not_clean)
+  return anaume_img
+
 def expand2square(pil_img, background_color):
     width, height = pil_img.size
     if width == height:
@@ -71,3 +86,4 @@ def make_square_file(in_path, out_path):
   im = Image.open(in_path)
   im_new = expand2square(im, 0)
   im_new.save(out_img_path, quality=95)
+
