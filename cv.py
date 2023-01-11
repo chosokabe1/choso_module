@@ -87,11 +87,11 @@ def make_square_file(in_path, out_path):
   im_new = expand2square(im, 0)
   im_new.save(out_img_path, quality=95)
 
-def output_overall_length(img_path, skeleton_path="skeleton_path"):
+def output_overall_length(img_path, skeleton_name="aaa", skeleton_path="skeleton_path"):
   anaume = cv2.imread(img_path)
   skeleton = cv2.ximgproc.thinning(anaume, thinningType=cv2.ximgproc.THINNING_GUOHALL)
   if skeleton_path:
-    cv2.imwrite(os.path.join(skeleton_path, os.path.splitext(os.path.basename(img_path))[0] + '.bmp'), skeleton)
+    cv2.imwrite(os.path.join(skeleton_path, skeleton_name + '.bmp'), skeleton)
   
   overall_length = cv2.countNonZero(skeleton)
   return overall_length
