@@ -89,20 +89,30 @@ def expand2square(pil_img, background_color):
 def padding_0_min_size_img(img, min_size):
   h, w, _ = img.shape
   flag = False
-  if h < min_size:
-    newimg = np.zeros((min_size, w, 3))
-    start = int((min_size - h) / 2)
-    fin = int((min_size + h) / 2)
-    newimg[start:fin, :] = img
+  if h < min_size and w < min_size:
+    newimg = np.zeros((min_size, min_size, 3))
+    start_h = int((min_size - h) / 2)
+    fin_h = int((min_size + h) / 2)
+    start_w = int((min_size - w) / 2)
+    fin_w = int((min_size + w) / 2)
+
+    newimg[start_h:fin_h, start_w:fin_w] = img
     flag = True
   
-  if w < min_size:
+  elif w < min_size:
     newimg = np.zeros((h, min_size, 3))
     start = int((min_size - w) / 2)
     fin = int((min_size + w) / 2)
     newimg[:, start:fin] = img
     flag = True
-  
+
+  elif h < min_size:
+    newimg = np.zeros((min_size, min_size, 3))
+    start_h = int((min_size - h) / 2)
+    fin_h = int((min_size + h) / 2)
+    newimg[start_h:fin_h, :] = img
+    flag = True
+
   if flag:
     return newimg
   else:
