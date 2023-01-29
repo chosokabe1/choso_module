@@ -149,11 +149,15 @@ def make_square_file(in_path, out_path):
   im_new.save(out_img_path, quality=95)
 
 def output_overall_length(anaume, skeleton_name="aaa", skeleton_path="skeleton_path"):
+  tmp_size = 64
+  height, _, _ = anaume.shape
+  rate = height / 64.0
+  anaume = cv2.resize(anaume, (tmp_size, tmp_size))
   skeleton = cv2.ximgproc.thinning(anaume, thinningType=cv2.ximgproc.THINNING_GUOHALL)
   if skeleton_path:
     cv2.imwrite(os.path.join(skeleton_path, skeleton_name + '.bmp'), skeleton)
   
-  overall_length = cv2.countNonZero(skeleton)
+  overall_length = int(cv2.countNonZero(skeleton) * rate)
   return overall_length
 
 def folder_bright_kakutyou(in_folder, out_folder):
