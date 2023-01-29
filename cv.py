@@ -150,7 +150,7 @@ def make_square_file(in_path, out_path):
 
 def output_overall_length(anaume, skeleton_name="aaa", skeleton_path="skeleton_path"):
   tmp_size = 64
-  height, _, _ = anaume.shape
+  height, _ = anaume.shape
   rate = height / 64.0
   anaume = cv2.resize(anaume, (tmp_size, tmp_size))
   skeleton = cv2.ximgproc.thinning(anaume, thinningType=cv2.ximgproc.THINNING_GUOHALL)
