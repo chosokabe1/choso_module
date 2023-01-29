@@ -86,6 +86,18 @@ def expand2square(pil_img, background_color):
         result.paste(pil_img, ((height - width) // 2, 0))
         return result
         
+def blackhat(img, kernel_size=15):
+  kernel = np.ones((kernel_size, kernel_size), np.uint8)
+  img = cv2.morphologyEx(img, cv2.MORPH_BLACKHAT, kernel)
+  img = cv2.bitwise_not(img)
+  return img
+
+def unevenness(img, kernel_size=63):
+  blur = cv2.blur(img, (kernel_size, kernel_size))
+  img = img/blur
+  img = np.clip(img*255, 0, 255).astype(np.uint8)
+  return img
+
 def padding_0_min_size_img(img, min_size):
   h, w, _ = img.shape
   flag = False
