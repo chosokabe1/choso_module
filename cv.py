@@ -46,7 +46,7 @@ def remove_objects(img, lower_size=None, upper_size=None):
 
 def closing_ellipse(img, kernel_size):
   kernel_ellipse = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size))
-  th = cv2.morphologyEx(th, cv2.MORPH_CLOSE, kernel_ellipse)
+  th = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel_ellipse)
   return th
 
 def anaume(img):
