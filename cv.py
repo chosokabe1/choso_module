@@ -43,6 +43,12 @@ def remove_objects(img, lower_size=None, upper_size=None):
       if sizes[i - 1] < upper_size:
         _img[labels == i] = 255
   return _img
+
+def closing_ellipse(img, kernel_size):
+  kernel_ellipse = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size))
+  th = cv2.morphologyEx(th, cv2.MORPH_CLOSE, kernel_ellipse)
+  return th
+
 def anaume(img):
   kernel_ellipse = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
   gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
