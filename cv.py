@@ -49,6 +49,11 @@ def closing_ellipse(img, kernel_size):
   th = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel_ellipse)
   return th
 
+def opening_ellipse(img, kernel_size):
+  kernel_ellipse = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size))
+  th = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel_ellipse)
+  return th
+
 def anaume(img):
   kernel_ellipse = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
   gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
