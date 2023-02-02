@@ -106,7 +106,10 @@ def blackhat(img, kernel_size=15):
 
 def unevenness(img, kernel_size=63):
   blur = cv2.blur(img, (kernel_size, kernel_size))
-  img = img/blur
+  img = img.astype(np.float64)
+
+  # img = img/blur
+  img = np.divide(img, blur, out=np.zeros_like(img), where=blur!=0)
   img = np.clip(img*255, 0, 255).astype(np.uint8)
   return img
 
