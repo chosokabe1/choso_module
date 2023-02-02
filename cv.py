@@ -4,6 +4,7 @@ import os
 from PIL import Image
 import numpy as np
 import shutil
+import math
 
 def folder_gray2BGR(folder):
   imgz_paths = []
@@ -150,14 +151,26 @@ def make_square_file(in_path, out_path):
 
 def output_overall_length(anaume, skeleton_name="aaa", skeleton_path="skeleton_path"):
   tmp_size = 64
-  height, _ = anaume.shape
-  rate = height / 64.0
+  height, width = anaume.shape
+  if height == width:
+    square = True
+    rate = height / float(tmp_size)
+  else:
+    square = False
+    width_rate = rate / float(tmp_size)
+    height_rate = rate / float(tmp_size)
+
   anaume = cv2.resize(anaume, (tmp_size, tmp_size))
+  anaume = anaume.astype(np.uint8)
   skeleton = cv2.ximgproc.thinning(anaume, thinningType=cv2.ximgproc.THINNING_GUOHALL)
   if skeleton_path:
     cv2.imwrite(os.path.join(skeleton_path, skeleton_name + '.bmp'), skeleton)
   
-  overall_length = int(cv2.countNonZero(skeleton) * rate)
+  if square:
+    overall_length = int(cv2.countNonZero(skeleton) * rate)
+  else:
+    overall_length = int(cv2.countNonZero(skeleton) * math.sqrt(width_rate**2 + height_rate**2) / math.sqrt(2))
+
   return overall_length
 
 def folder_bright_kakutyou(in_folder, out_folder):
