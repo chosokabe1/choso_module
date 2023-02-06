@@ -160,8 +160,8 @@ def output_overall_length(anaume, skeleton_name="aaa", skeleton_path="skeleton_p
     rate = height / float(tmp_size)
   else:
     square = False
-    width_rate = rate / float(tmp_size)
-    height_rate = rate / float(tmp_size)
+    width_rate = width / float(tmp_size)
+    height_rate = height / float(tmp_size)
 
   anaume = cv2.resize(anaume, (tmp_size, tmp_size))
   anaume = anaume.astype(np.uint8)
