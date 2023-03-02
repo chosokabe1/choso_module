@@ -282,3 +282,17 @@ def train_model(model, dataloaders, criterion, optimizer, last, num_epochs=25, i
         model.load_state_dict(best_model_wts)
 
     return model, train_acc_history, val_acc_history
+
+def tensor_to_np(inp, type):
+    "imshow for Tesor"
+    if type == "imagenet":
+        inp = inp.numpy().transpose((1,2,0))
+        mean = np.array([0.485, 0.456, 0.406])
+        std = np.array([0.229, 0.224, 0.225])
+        inp = std * inp + mean
+        inp = np.clip(inp, 0, 1)
+        return inp
+
+    elif type == "gray":
+        inp = np.clip(inp, 0, 1)
+        return inp
