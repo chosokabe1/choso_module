@@ -51,6 +51,24 @@ def initialize_model(model_name, num_classes, feature_extract, use_pretrained=Tr
     model_ft.fc = nn.Linear(num_ftrs, num_classes)
     input_size = 224
 
+  if model_name == "resnet_480":
+    """ Resnet18
+    """
+    model_ft = models.resnet18(pretrained=use_pretrained)
+    set_parameter_requires_grad(model_ft, feature_extract)
+    num_ftrs = model_ft.fc.in_features
+    if binary:
+      model_ft.conv1 = nn.Conv2d(
+        in_channels=1,
+        out_channels=64,
+        kernel_size=model_ft.conv1.kernel_size,
+        stride=model_ft.conv1.stride,
+        padding=model_ft.conv1.padding,
+        bias=False
+      )
+    model_ft.fc = nn.Linear(num_ftrs, num_classes)
+    input_size = 480
+
   elif model_name == "efficientnetb7":
     model_ft = EfficientNet.from_pretrained('efficientnet-b7')
     set_parameter_requires_grad(model_ft, feature_extract)
