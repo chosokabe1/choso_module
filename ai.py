@@ -4,6 +4,7 @@ from torch.utils.data import Dataset
 from PIL import Image
 import os
 import pandas as pd
+import seaborn as sn
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -14,6 +15,22 @@ from torchvision import datasets, models, transforms
 import csv
 import time
 import copy
+import timm
+
+class ViT(nn.Module):
+    def __init__(self, model_name='vit_base_patch16_224', binary = True, pretrained=True, num_classes=2):
+        super(ViT, self).__init__()
+        self.model = timm.create_model(model_name, pretrained=pretrained)
+        
+        if binary:
+          # グレースケール用にパッチ埋め込みレイヤーを変更
+          self.model.patch_embed.proj = nn.Conv2d(1, self.model.patch_embed.proj.out_channels, kernel_size=self.model.patch_embed.proj.kernel_size, stride=self.model.patch_embed.proj.stride, padding=self.model.patch_embed.proj.padding)
+        
+        # 2クラス分類用に分類器を変更
+        self.model.head = nn.Linear(self.model.head.in_features, num_classes)
+
+    def forward(self, x):
+        return self.model(x)
 
 def imgfullpaths2allcsv(imgfullpathlist, csv_path):
   with open(csv_path, 'w', newline='') as f:
@@ -26,6 +43,9 @@ def set_parameter_requires_grad(model, feature_extracting):
   if feature_extracting:
     for param in model.parameters():
       param.requires_grad = False
+def makedir(dir):
+  if not os.path.exists(dir):
+    os.makedirs(dir)
 
 from efficientnet_pytorch import EfficientNet
 def initialize_model(model_name, num_classes, feature_extract, use_pretrained=True, binary=False):
@@ -68,6 +88,24 @@ def initialize_model(model_name, num_classes, feature_extract, use_pretrained=Tr
       )
     model_ft.fc = nn.Linear(num_ftrs, num_classes)
     input_size = 480
+
+  elif model_name == "vit_l_16":
+    model_ft = models.vit_b_16(weights=models.ViT_B_16_Weights.DEFAULT)
+    set_parameter_requires_grad(model_ft, feature_extract)
+    num_ftrs = model_ft.fc.in_features
+    if binary:
+      model_ft.conv1 = nn.Conv2d(
+        in_channels=1,
+        out_channels=64,
+        kernel_size=model_ft.conv1.kernel_size,
+        stride=model_ft.conv1.stride,
+        padding=model_ft.conv1.padding,
+        bias=False
+      )
+    model_ft.fc = nn.Linear(num_ftrs, num_classes)
+    input_size = 480
+
+     
 
   elif model_name == "efficientnetb7":
     model_ft = EfficientNet.from_pretrained('efficientnet-b7')
@@ -314,3 +352,142 @@ def tensor_to_np(inp, type):
     elif type == "gray":
         inp = np.clip(inp, 0, 1)
         return inp
+
+def false_img_save(pred, label, input, false_img_count, out_dir, class_names):
+  pil_img = Image.fromarray(input)
+  makedir(out_dir + 'error/pred_' + str(class_names[pred.item()]) + '_label_' + str(class_names[label.item()]))
+  pil_img.save(out_dir + f'error/pred_{class_names[pred.item()]}_label_{class_names[label.item()]}/{false_img_count}.jpg')
+
+def save_txtfile(data, outpath):
+  file = outpath
+  fileobj = open(file, "w", encoding = "utf_8")
+  for index , i in enumerate(data):
+    if index == len(data) - 1:
+      fileobj.write(f"{i}")
+    else:
+      fileobj.write(f"{i},")
+
+  fileobj.close()
+
+def val_model(model, dataloaders, optimizer, num_classes, criterion, binary, out_dir, class_names):
+  false_img_count = 0
+  phase = 'val'
+  confusion_matrix = torch.zeros(num_classes, num_classes)
+  model.eval()
+  device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+  for inputs, labels in dataloaders[phase]:
+    inputs = inputs.to(device)
+    labels = labels.to(device)
+    optimizer.zero_grad()
+    with torch.set_grad_enabled(phase == 'train'):
+      outputs = model(inputs)
+      loss = criterion(outputs, labels)
+      _, preds = torch.max(outputs, 1)
+
+     #######################################################
+      for i in range(inputs.size()[0]):
+        if preds[i] != labels[i]:
+          if binary:
+            type = "gray"
+          else:
+            type = "imagenet"
+
+          input = tensor_to_np(inputs.cpu().data[i], type)
+          input *= 255
+          print(input[0].shape)
+          print(input[0])
+          input = input[0].astype(np.uint8)
+          false_img_save(preds[i], labels[i], input, false_img_count)
+          false_img_count += 1
+     #######################################################
+
+      for t_confusion_matrix, p_confusion_matrix in zip(labels.view(-1), preds.view(-1)):
+        confusion_matrix[t_confusion_matrix.long(), p_confusion_matrix.long()] += 1
+
+  confusion_matrix_numpy = confusion_matrix.to('cpu').detach().numpy().copy()
+  df_cmx = pd.DataFrame(confusion_matrix_numpy, index=class_names, columns=class_names)
+  plt.figure(figsize = (12, 7))
+  sn.set(font_scale = 1)
+  sn.heatmap(df_cmx, annot=True, fmt='g', cmap='Blues')
+  plt.savefig(os.path.join(out_dir,"confusion_matrix.png"))
+  sn.set(font_scale = 1)
+
+def train(data_dir = "..", model_name = "aaa", output_name = "aaa", num_classes = 2, batch_size = 2, num_epochs = 2, feature_extract = False, input_size = 224, binary = True, last = True, data_transforms = {}):
+  output_base_dir = "runs\\train"
+  out_dir = os.path.join(output_base_dir,output_name)
+  if os.path.exists(out_dir):
+    print("出力ディレクトリ名が被っているよ")
+    sys.exit()
+
+  makedir(out_dir)
+
+  if 'vit' in model_name:
+    model_ft = ViT(model_name=model_name, binary=binary, pretrained=True, num_classes = num_classes)
+  else:
+     model_ft, input_size = initialize_model(model_name, num_classes, feature_extract, use_pretrained=True, binary=binary)
+  
+  device = 'cuda' if torch.cuda.is_available() else 'cpu'
+  model_ft = model_ft.to(device)
+
+  # Create training and validation datasets
+  image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x), data_transforms[x]) for x in ['train', 'val']}
+  # Create training and validation dataloaders
+  dataloaders_dict = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=batch_size, shuffle=True, num_workers=4) for x in ['train', 'val']}
+  class_names = image_datasets['train'].classes
+  # Detect if we have a GPU available
+  device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+  params_to_update = model_ft.parameters()
+  print("Params to learn:")
+  if feature_extract:
+    params_to_update = []
+    for name,param in model_ft.named_parameters():
+      if param.requires_grad == True:
+        params_to_update.append(param)
+        print("\t",name)
+  else:
+    for name,param in model_ft.named_parameters():
+      if param.requires_grad == True:
+        print("\t",name)
+
+  # Observe that all parameters are being optimized
+  optimizer_ft = optim.SGD(params_to_update, lr=0.001, momentum=0.9)
+
+  # Setup the loss fxn
+  criterion = nn.CrossEntropyLoss()
+
+  # Train and evaluate
+  model_ft, train_acc_hist_tensor, val_acc_hist_tensor = train_model(model_ft, dataloaders_dict, criterion, optimizer_ft, last, num_epochs=num_epochs, is_inception=(model_name=="inception"))
+
+  val_model(model_ft, dataloaders_dict, optimizer_ft, num_classes, criterion, binary, out_dir, class_names)
+
+  train_acc_hist = []
+  val_acc_hist = []
+
+  for i in train_acc_hist_tensor:
+    train_acc_hist.append(float(i.item()))
+
+  for i in val_acc_hist_tensor:
+    val_acc_hist.append(float(i.item()))
+
+  plt.plot(train_acc_hist)
+  plt.title("train_accuracy- epoch")
+  plt.xlabel("epoch")
+  plt.ylabel("accuracy")
+  plt.grid(True)
+  plt.savefig(os.path.join(out_dir,"train_acc.png"))
+  plt.show()
+
+  plt.plot(val_acc_hist)
+  plt.title("test_accuracy- epoch")
+  plt.xlabel("epoch")
+  plt.ylabel("accuracy")
+  plt.grid(True)
+  plt.savefig(os.path.join(out_dir,"val_acc.png"))
+  plt.show()
+
+  save_txtfile(train_acc_hist, os.path.join(out_dir,"train_acc_hist.txt"))
+  save_txtfile(val_acc_hist, os.path.join(out_dir,"val_acc_hist.txt"))
+
+  torch.save(model_ft.state_dict(), os.path.join(out_dir,'model_weights.pth'))
