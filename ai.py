@@ -350,6 +350,7 @@ def tensor_to_np(inp, type):
         return inp
 
     elif type == "gray":
+        inp = inp.numpy()
         inp = np.clip(inp, 0, 1)
         return inp
 
@@ -395,10 +396,8 @@ def val_model(model, dataloaders, optimizer, num_classes, criterion, binary, out
 
           input = tensor_to_np(inputs.cpu().data[i], type)
           input *= 255
-          print(input[0].shape)
-          print(input[0])
           input = input[0].astype(np.uint8)
-          false_img_save(preds[i], labels[i], input, false_img_count)
+          false_img_save(preds[i], labels[i], input, false_img_count, out_dir, class_names)
           false_img_count += 1
      #######################################################
 
@@ -439,17 +438,17 @@ def train(data_dir = "..", model_name = "aaa", output_name = "aaa", num_classes 
   device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
   params_to_update = model_ft.parameters()
-  print("Params to learn:")
   if feature_extract:
     params_to_update = []
     for name,param in model_ft.named_parameters():
       if param.requires_grad == True:
         params_to_update.append(param)
-        print("\t",name)
+        # print("\t",name)
   else:
     for name,param in model_ft.named_parameters():
       if param.requires_grad == True:
-        print("\t",name)
+         hoge = 1
+        # print("\t",name)
 
   # Observe that all parameters are being optimized
   optimizer_ft = optim.SGD(params_to_update, lr=0.001, momentum=0.9)
@@ -491,3 +490,5 @@ def train(data_dir = "..", model_name = "aaa", output_name = "aaa", num_classes 
   save_txtfile(val_acc_hist, os.path.join(out_dir,"val_acc_hist.txt"))
 
   torch.save(model_ft.state_dict(), os.path.join(out_dir,'model_weights.pth'))
+
+  return val_acc_hist[-1]
