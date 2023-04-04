@@ -89,6 +89,25 @@ def initialize_model(model_name, num_classes, feature_extract, use_pretrained=Tr
     model_ft.fc = nn.Linear(num_ftrs, num_classes)
     input_size = 480
 
+  elif model_name == "resnet_1800_gray":
+    """ Resnet18 with 1800x1800 grayscale input
+    """
+    if use_pretrained:
+      print("Pretrained weights are not available for this model configuration. Initializing without pretrained weights.")
+    model_ft = models.resnet18(pretrained=False)
+    set_parameter_requires_grad(model_ft, feature_extract)
+    num_ftrs = model_ft.fc.in_features
+    model_ft.conv1 = nn.Conv2d(
+      in_channels=1,
+      out_channels=64,
+      kernel_size=model_ft.conv1.kernel_size,
+      stride=model_ft.conv1.stride,
+      padding=model_ft.conv1.padding,
+      bias=False
+    )
+    model_ft.fc = nn.Linear(num_ftrs, num_classes)
+    input_size = 1800
+    
   elif model_name == "vit_l_16":
     model_ft = models.vit_b_16(weights=models.ViT_B_16_Weights.DEFAULT)
     set_parameter_requires_grad(model_ft, feature_extract)
@@ -235,12 +254,10 @@ def henkou_num_class(model, num_class, feature_extract):
 
 def train_model(model, dataloaders, criterion, optimizer, last, num_epochs=25, is_inception=False):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
     since = time.time()
 
     train_acc_history = []
     val_acc_history = []
-
     best_model_wts = copy.deepcopy(model.state_dict())
     last_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
@@ -294,23 +311,17 @@ def train_model(model, dataloaders, criterion, optimizer, last, num_epochs=25, i
                 # statistics
                 running_loss += loss.item() * inputs.size(0)
                 running_corrects += torch.sum(preds == labels.data)
-                
 
             epoch_loss = running_loss / len(dataloaders[phase].dataset)
             epoch_acc = running_corrects.double() / len(dataloaders[phase].dataset)
-
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(phase, epoch_loss, epoch_acc))
-
             #######
             # 追加
             #######
             # if phase == 'val':
             #     print('{} / {} = Acc: {:.4f}'.format(running_corrects.double(), len(dataloaders[phase].dataset), epoch_acc))
-
             #     print(preds)
-
             #     print(labels.data)
-
             if phase == 'train':
                 train_acc_history.append(epoch_acc)
             #######
@@ -323,7 +334,6 @@ def train_model(model, dataloaders, criterion, optimizer, last, num_epochs=25, i
                 val_acc_history.append(epoch_acc)
             
             last_model_wts = copy.deepcopy(model.state_dict())
-
         print()
 
     last_model_wts = copy.deepcopy(model.state_dict())
@@ -410,6 +420,7 @@ def val_model(model, dataloaders, optimizer, num_classes, criterion, binary, out
   sn.set(font_scale = 1)
   sn.heatmap(df_cmx, annot=True, fmt='g', cmap='Blues')
   plt.savefig(os.path.join(out_dir,"confusion_matrix.png"))
+  plt.show()
   sn.set(font_scale = 1)
 
 def train(data_dir = "..", model_name = "aaa", output_name = "aaa", num_classes = 2, batch_size = 2, num_epochs = 2, feature_extract = False, input_size = 224, binary = True, last = True, data_transforms = {}):
@@ -451,8 +462,8 @@ def train(data_dir = "..", model_name = "aaa", output_name = "aaa", num_classes 
         # print("\t",name)
 
   # Observe that all parameters are being optimized
-  optimizer_ft = optim.SGD(params_to_update, lr=0.001, momentum=0.9)
-
+  # optimizer_ft = optim.SGD(params_to_update, lr=0.001, momentum=0.9)
+  optimizer_ft = torch.optim.Adam(params_to_update, lr=1e-4, weight_decay=1e-5)
   # Setup the loss fxn
   criterion = nn.CrossEntropyLoss()
 
@@ -491,4 +502,4 @@ def train(data_dir = "..", model_name = "aaa", output_name = "aaa", num_classes 
 
   torch.save(model_ft.state_dict(), os.path.join(out_dir,'model_weights.pth'))
 
-  return val_acc_hist[-1]
+  return val_acc_hist
