@@ -107,6 +107,44 @@ def initialize_model(model_name, num_classes, feature_extract, use_pretrained=Tr
     )
     model_ft.fc = nn.Linear(num_ftrs, num_classes)
     input_size = 1800
+
+  elif model_name == "resnet_1024_gray":
+    """ Resnet18 with 1024x1024 grayscale input
+    """
+    if use_pretrained:
+      print("Pretrained weights are not available for this model configuration. Initializing without pretrained weights.")
+    model_ft = models.resnet18(pretrained=False)
+    set_parameter_requires_grad(model_ft, feature_extract)
+    num_ftrs = model_ft.fc.in_features
+    model_ft.conv1 = nn.Conv2d(
+      in_channels=1,
+      out_channels=64,
+      kernel_size=model_ft.conv1.kernel_size,
+      stride=model_ft.conv1.stride,
+      padding=model_ft.conv1.padding,
+      bias=False
+    )
+    model_ft.fc = nn.Linear(num_ftrs, num_classes)
+    input_size = 1024
+  
+  elif model_name == "resnet_512_gray":
+    """ Resnet18 with 1024x1024 grayscale input
+    """
+    if use_pretrained:
+      print("Pretrained weights are not available for this model configuration. Initializing without pretrained weights.")
+    model_ft = models.resnet18(pretrained=False)
+    set_parameter_requires_grad(model_ft, feature_extract)
+    num_ftrs = model_ft.fc.in_features
+    model_ft.conv1 = nn.Conv2d(
+      in_channels=1,
+      out_channels=64,
+      kernel_size=model_ft.conv1.kernel_size,
+      stride=model_ft.conv1.stride,
+      padding=model_ft.conv1.padding,
+      bias=False
+    )
+    model_ft.fc = nn.Linear(num_ftrs, num_classes)
+    input_size = 512
     
   elif model_name == "vit_l_16":
     model_ft = models.vit_b_16(weights=models.ViT_B_16_Weights.DEFAULT)
