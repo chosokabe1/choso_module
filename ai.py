@@ -181,8 +181,13 @@ def initialize_model(model_name, num_classes, feature_extract, use_pretrained=Tr
     set_parameter_requires_grad(model_ft, feature_extract)
     model_ft.fc = nn.Linear(num_ftrs, num_classes)
 
+  elif model_name == "efficientnetv2-s":
+    model_ft = EfficientNet.from_pretrained('efficientnetv2-s')
+    num_ftrs = model_ft._fc.in_features
+    model_ft._fc = nn.Linear(num_ftrs, num_classes)
+    input_size = 384  # EfficientNetV2-Sのデフォルト入力サイズ
   elif model_name == "efficientnetv2m":
-    model_ft = EfficientNet.from_pretrained('efficientnet-b7')
+    model_ft = EfficientNet.from_pretrained('efficientnetv2-m')
     set_parameter_requires_grad(model_ft, feature_extract)
     num_ftrs = model_ft._fc.in_features
     model_ft._fc = nn.Linear(num_ftrs, num_classes)
@@ -302,6 +307,7 @@ def henkou_num_class(model, num_class, feature_extract):
 
 def train_model(model, dataloaders, criterion, optimizer, last, num_epochs=25, is_inception=False):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print(device)
     since = time.time()
 
     train_acc_history = []
@@ -414,7 +420,7 @@ def tensor_to_np(inp, type):
 
 def false_img_save(pred, label, input, false_img_count, out_dir, class_names):
   pil_img = Image.fromarray(input)
-  print(pred,label,class_names)
+  # print(pred,label,class_names)
 
   makedir(out_dir + 'error/pred_' + str(class_names[pred.item()]) + '_label_' + str(class_names[label.item()]))
   pil_img.save(out_dir + f'error/pred_{class_names[pred.item()]}_label_{class_names[label.item()]}/{false_img_count}.jpg')
@@ -472,16 +478,20 @@ def val_model(model, dataloaders, optimizer, num_classes, criterion, binary, out
   plt.savefig(os.path.join(out_dir,"confusion_matrix.png"))
   plt.show()
   sn.set(font_scale = 1)
-
+def create_output_directory(base_dir):
+  i = 1
+  while True:
+    output_dir = base_dir + f'output_{i}'
+    if not os.path.exists(output_dir):
+      os.makedirs(output_dir)
+      break
+    i += 1
+  return output_dir
 def train(data_dir = "..", model_name = "aaa", output_name = "aaa", num_classes = 2, batch_size = 2, num_epochs = 2, feature_extract = False, input_size = 224, binary = True, last = True, data_transforms = {}):
-  output_base_dir = "runs\\train"
-  out_dir = os.path.join(output_base_dir,output_name)
-  if os.path.exists(out_dir):
-    print("出力ディレクトリ名が被っているよ")
-    sys.exit()
+  output_base_dir = os.path.join("runs/train",output_name)
+  output_directory = create_output_directory(output_base_dir)
 
-  makedir(out_dir)
-
+  makedir(output_directory)
   if 'vit' in model_name:
     model_ft = ViT(model_name=model_name, binary=binary, pretrained=True, num_classes = num_classes)
   else:
@@ -520,7 +530,7 @@ def train(data_dir = "..", model_name = "aaa", output_name = "aaa", num_classes 
   # Train and evaluate
   model_ft, train_acc_hist_tensor, val_acc_hist_tensor = train_model(model_ft, dataloaders_dict, criterion, optimizer_ft, last, num_epochs=num_epochs, is_inception=(model_name=="inception"))
 
-  val_model(model_ft, dataloaders_dict, optimizer_ft, num_classes, criterion, binary, out_dir, class_names)
+  val_model(model_ft, dataloaders_dict, optimizer_ft, num_classes, criterion, binary, output_directory, class_names)
 
   train_acc_hist = []
   val_acc_hist = []
@@ -554,12 +564,12 @@ def train(data_dir = "..", model_name = "aaa", output_name = "aaa", num_classes 
   plt.ylabel("accuracy")
   plt.grid(True)
   plt.legend()
-  plt.savefig(os.path.join(out_dir, "acc.png"))
+  plt.savefig(os.path.join(output_directory, "acc.png"))
   plt.show()
 
-  save_txtfile(train_acc_hist, os.path.join(out_dir,"train_acc_hist.txt"))
-  save_txtfile(val_acc_hist, os.path.join(out_dir,"val_acc_hist.txt"))
+  save_txtfile(train_acc_hist, os.path.join(output_directory,"train_acc_hist.txt"))
+  save_txtfile(val_acc_hist, os.path.join(output_directory,"val_acc_hist.txt"))
 
-  torch.save(model_ft.state_dict(), os.path.join(out_dir,'model_weights.pth'))
+  torch.save(model_ft.state_dict(), os.path.join(output_directory,'model_weights.pth'))
 
   return val_acc_hist
