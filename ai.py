@@ -56,7 +56,7 @@ def initialize_model(model_name, num_classes, feature_extract, use_pretrained=Tr
   input_size = 0
   if "resnet" in model_name:
     if model_name == "resnet18":
-      model_ft = models.resnet18(pretrained=use_pretrained)
+      model_ft = models.resnet18(weights="ResNet18_Weights.IMAGENET1K_V1")
       num_ftrs = model_ft.fc.in_features
     
     elif model_name == "resnet34":
@@ -123,7 +123,7 @@ def initialize_model(model_name, num_classes, feature_extract, use_pretrained=Tr
     model_ft.fc = nn.Linear(num_ftrs, num_classes)
     input_size = 480
 
-  if "efficientnet-b" in model_name:
+  elif "efficientnet-b" in model_name:
     first_layer_out_channels_map = {
         "efficientnet-b0": 32,
         "efficientnet-b1": 32,
