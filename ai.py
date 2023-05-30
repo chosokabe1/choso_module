@@ -47,6 +47,9 @@ def set_parameter_requires_grad(model, feature_extracting):
 def makedir(dir):
   if not os.path.exists(dir):
     os.makedirs(dir)
+
+# def initialize_timm_model(model_name)
+
 from swin_transformer_pytorch import SwinTransformer
 from efficientnet_pytorch import EfficientNet
 def initialize_model(model_name, num_classes, feature_extract, use_pretrained=True, binary=False):
