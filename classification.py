@@ -8,6 +8,7 @@ from torchvision import datasets, models, transforms
 from PIL import Image
 import numpy as np
 import os
+import sys
 
 def classification_img(model, binary, input_size, data_transforms, image_path, save_file_path):
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -70,3 +71,6 @@ def classification_dir(model_name, model_path, num_classes, binary, image_dir_pa
             image_path = os.path.join(image_dir_path, filename)
             # Apply visualize feature map and save the result
             classification_img(model, binary, input_size, data_transforms, image_path, save_file_path)
+
+if __name__ == "__main__":
+    classification_dir(sys.argv[1],sys.argv[2],int(sys.argv[3]),bool(sys.argv[4]),sys.argv[5],sys.argv[6])

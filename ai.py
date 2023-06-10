@@ -50,7 +50,7 @@ def makedir(dir):
 
 # def initialize_timm_model(model_name)
 
-from swin_transformer_pytorch import SwinTransformer
+# from swin_transformer_pytorch import SwinTransformer
 from efficientnet_pytorch import EfficientNet
 def initialize_model(model_name, num_classes, feature_extract, use_pretrained=True, binary=False):
   # Initialize these variables which will be set in this if statement. Each of these
@@ -83,27 +83,27 @@ def initialize_model(model_name, num_classes, feature_extract, use_pretrained=Tr
     model_ft.fc = nn.Linear(num_ftrs, num_classes)
     input_size = 224
 
-  elif "swin" in model_name:
-    if model_name == "swin_t":
-        model_ft = SwinTransformer(hidden_dim=96,
-                                   layers=(2, 2, 6, 2),
-                                   heads=(3, 6, 12, 24),
-                                   channels=3,
-                                   num_classes=2,
-                                   head_dim=32,
-                                   window_size=7,
-                                   downscaling_factors=(4, 2, 2, 2),
-                                   relative_pos_embedding=True)
+  # elif "swin" in model_name:
+  #   if model_name == "swin_t":
+  #       model_ft = SwinTransformer(hidden_dim=96,
+  #                                  layers=(2, 2, 6, 2),
+  #                                  heads=(3, 6, 12, 24),
+  #                                  channels=3,
+  #                                  num_classes=2,
+  #                                  head_dim=32,
+  #                                  window_size=7,
+  #                                  downscaling_factors=(4, 2, 2, 2),
+  #                                  relative_pos_embedding=True)
         
-        input_size = 224
+  #       input_size = 224
 
-    elif model_name == "swin_v2_t":
-        model_ft = SwinTransformer(img_size=224, patch_size=4, in_chans=3,
-                                   num_classes=num_classes, embed_dim=96,
-                                   depths=[2, 2, 6, 2], num_heads=[3, 6, 12, 24],
-                                   window_size=7, mlp_ratio=4, qkv_bias=True,
-                                   use_absolute_pos_emb=True, drop_path_rate=0.1)
-        input_size = 224
+  #   elif model_name == "swin_v2_t":
+  #       model_ft = SwinTransformer(img_size=224, patch_size=4, in_chans=3,
+  #                                  num_classes=num_classes, embed_dim=96,
+  #                                  depths=[2, 2, 6, 2], num_heads=[3, 6, 12, 24],
+  #                                  window_size=7, mlp_ratio=4, qkv_bias=True,
+  #                                  use_absolute_pos_emb=True, drop_path_rate=0.1)
+  #       input_size = 224
 
     if binary:
         model_ft.patch_embed = nn.Conv2d(1, model_ft.embed_dim, kernel_size=model_ft.patch_size, stride=model_ft.patch_size, padding=0)
