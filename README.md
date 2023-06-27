@@ -1,6 +1,8 @@
 # choso_module
 プログラム部品
 
+finetune.py:クラス分類　ファインチューニングファイル
+
 classification.py:クラス分類実行ファイル
 
 使い方：
