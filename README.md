@@ -5,6 +5,7 @@ finetune.py:クラス分類　ファインチューニングファイル
 
 5分割交差検証をしています
 
+
 classification.py:クラス分類実行ファイル
 
 使い方：
@@ -16,6 +17,7 @@ model_name efficientnet-b5など
 model_path 訓練済みモデルを保存したパス
 
 binary 対象画像がグレースケール化否か　グレースケールならTrue カラーならFalse
+
 
 ai.py：AI関連の部品
 cv.py：画像処理関連の部品
