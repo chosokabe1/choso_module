@@ -11,24 +11,24 @@ data_dir = ["D:\\ex\\data\\rectangle\\fold1"
             ,"D:\\ex\\data\\rectangle\\fold5"]
 
 model_list = ["efficientnet-b5"]
-input_size = 456
+input_size = 456 # modelに応じて変える必要あり
 data_transforms = {
     'train': transforms.Compose([
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomVerticalFlip(),
-        transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
-        transforms.RandomRotation(degrees=(0,360),expand=True),
+        transforms.RandomHorizontalFlip(), # データ拡張
+        transforms.RandomVerticalFlip(), # データ拡張
+        transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1), # データ拡張
+        transforms.RandomRotation(degrees=(0,360),expand=True), # データ拡張
         transforms.Resize(input_size),
-        transforms.Grayscale(),
-        transforms.ToTensor(),
+        transforms.Grayscale(), # グレースケールの場合。カラーの場合はこのコードには記載していない。
+        transforms.ToTensor(), 
     ]),
     'val': transforms.Compose([
         transforms.Resize(input_size),
-        transforms.Grayscale(),
+        transforms.Grayscale(), # グレースケールの場合
         transforms.ToTensor(),
     ]),
 }
-with open('20230412-2.csv', 'w', newline="") as f:
+with open('20230412-2.csv', 'w', newline="") as f: #　正解率推移をcsvに保存する
     writer = csv.writer(f)
     for model in model_list:
         cross_sum = 0
@@ -37,7 +37,7 @@ with open('20230412-2.csv', 'w', newline="") as f:
             if "large" in model:
                 batch_size = 8
             else:
-                batch_size = 8
+                batch_size = 8 # バッチサイズはここで設定する
 
             val_acc_hist = chosoai.train(data_dir=data,model_name=model,
                           output_name=  "maxsquare_0412_" + model+"-fold"+str(id+1),
@@ -46,7 +46,10 @@ with open('20230412-2.csv', 'w', newline="") as f:
                           feature_extract = False, input_size = 224, 
                           binary = True, last = True, 
                           data_transforms = data_transforms
-                        )
+                        ) # epoch，feature_extract，binary，lastをここで設定する。
+            #binaryはグレースケールか否か，グレースケールならTrue，カラーならFalse
+            #lastがTrueなら最後のエポックのモデルを保存し，最後のエポックの混同行列を表示する。
+            #lastがfalseなら最良のエポックとなる
 
             csv_row_list.append(val_acc_hist)
         
