@@ -32,6 +32,7 @@ class Conv2dSame(nn.Conv2d):
 
     def forward(self, x):
         return conv2d_same(x, self.weight, self.bias, self.stride, self.padding, self.dilation, self.groups)
+    
 def set_parameter_requires_grad(model, feature_extracting):
   if feature_extracting:
     for param in model.parameters():
@@ -177,7 +178,7 @@ def main(model_name, num_classes, feature_extract, use_pretrained=True, binary=F
       input_size = 480  # EfficientNetV2-mのデフォルト入力サイズ
     elif model_name == "efficientnetv2-l":
       model_ft = timm.create_model('tf_efficientnetv2_l', pretrained=True)
-      input_size = 480  # EfficientNetV2-mのデフォルト入力サイズ
+      input_size = 480  # EfficientNetV2-lのデフォルト入力サイズ
 
     if binary:
       out_channels = first_layer_out_channels_map[model_name]
