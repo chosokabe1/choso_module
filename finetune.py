@@ -12,25 +12,50 @@ def main():
     #             ,r"D:\ex\egg\data\jpeg\halfway\fold5"]
     
     data_dir = [r"D:\ex\egg\data\dtd\train_val"]
-    
+
+    # model_list = ["efficientnet-b5"]
+    # input_size = 456
+
     model_list = ["efficientnet-b0"]
     input_size = 224 # modelに応じて変える必要あり
+
+    '''入力1channel'''
+    # data_transforms = {
+    #     'train': transforms.Compose([
+    #         transforms.RandomHorizontalFlip(), # データ拡張
+    #         transforms.RandomVerticalFlip(), # データ拡張
+    #         transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1), # データ 拡張
+    #         transforms.RandomRotation(degrees=(0,360),expand=True), # データ拡張
+    #         transforms.Resize((input_size,input_size)),
+    #         transforms.Grayscale(), # グレースケールの場合。
+    #         transforms.ToTensor(), 
+    #     ]),
+    #     'val': transforms.Compose([
+    #         transforms.Resize((input_size,input_size)),
+    #         transforms.Grayscale(), # グレースケールの場合
+    #         transforms.ToTensor(),
+    #     ]),
+    # }
+
+    '''入力3channel'''
     data_transforms = {
         'train': transforms.Compose([
-            transforms.RandomHorizontalFlip(), # データ拡張
-            transforms.RandomVerticalFlip(), # データ拡張
-            transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1), # データ 拡張
-            # transforms.RandomRotation(degrees=(0,360),expand=True), # データ拡張
             transforms.Resize((input_size,input_size)),
-            transforms.Grayscale(), # グレースケールの場合。カラーの場合はこのコードには記載していない。
-            transforms.ToTensor(), 
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomVerticalFlip(),
+            transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
+            # transforms.RandomRotation(degrees=(0,360),expand=True),
+            transforms.Resize((input_size,input_size)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ]),
         'val': transforms.Compose([
             transforms.Resize((input_size,input_size)),
-            transforms.Grayscale(), # グレースケールの場合
             transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ]),
     }
+
     with open('20230412-2.csv', 'w', newline="") as f: #　正解率推移をcsvに保存する
         writer = csv.writer(f)
         for model in model_list:
@@ -40,14 +65,13 @@ def main():
                 if "large" in model:
                     batch_size = 8
                 else:
-                    batch_size = 8 # バッチサイズはここで設定する
+                    batch_size = 64 # バッチサイズはここで設定する
 
                 val_acc_hist = chosoai.train(data_dir=data,model_name=model,
-                            output_name=  "maxsquare_0412_" + model+"-fold"+str(id+1),
+                            output_name=  "dtd_" + model+"-fold"+str(id+1),
                             num_classes=2,
-                            batch_size = batch_size, num_epochs = 100,
-                            feature_extract = False, input_size = 224, 
-                            binary = True, last = True, 
+                            batch_size = batch_size, num_epochs = 10,
+                            feature_extract = False, binary = False, last = True, 
                             data_transforms = data_transforms
                             ) # epoch，feature_extract，binary，lastをここで設定する。
             #binaryはグレースケールか否か，グレースケールならTrue，カラーならFalse

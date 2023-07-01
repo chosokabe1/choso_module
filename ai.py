@@ -182,7 +182,7 @@ def initialize_model(model_name, num_classes, feature_extract, use_pretrained=Tr
       model_ft._conv_stem = nn.Conv2d(1, out_channels, kernel_size=3, stride=2, bias=False)
 
     set_parameter_requires_grad(model_ft, feature_extract)
-    model_ft.fc = nn.Linear(num_ftrs, num_classes)
+    model_ft._fc = nn.Linear(num_ftrs, num_classes)
 
   elif model_name == "efficientnetv2-s":
     model_ft = EfficientNet.from_pretrained('efficientnetv2-s')
@@ -372,16 +372,9 @@ def train_model(model, dataloaders, criterion, optimizer, last, num_epochs=25, i
             epoch_loss = running_loss / len(dataloaders[phase].dataset)
             epoch_acc = running_corrects.double() / len(dataloaders[phase].dataset)
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(phase, epoch_loss, epoch_acc))
-            #######
-            # 追加
-            #######
-            # if phase == 'val':
-            #     print('{} / {} = Acc: {:.4f}'.format(running_corrects.double(), len(dataloaders[phase].dataset), epoch_acc))
-            #     print(preds)
-            #     print(labels.data)
+
             if phase == 'train':
                 train_acc_history.append(epoch_acc)
-            #######
 
             # deep copy the model
             if phase == 'val' and epoch_acc > best_acc:
@@ -458,10 +451,14 @@ def val_model(model, dataloaders, optimizer, num_classes, criterion, binary, out
     labels = labels.to(device)
     optimizer.zero_grad()
     with torch.set_grad_enabled(phase == 'train'):
-      outputs = model(inputs)
+      # outputs = model(inputs)
+      outputs = torch.nn.functional.softmax(model(inputs), dim=1)
       loss = criterion(outputs, labels)
       _, preds = torch.max(outputs, 1)
-
+      # Add these print statements
+      # print("Outputs: ", outputs)
+      # print("Labels: ", labels)
+      # print("Predictions: ", preds)
      #######################################################
       for i in range(inputs.size()[0]):
         if preds[i] != labels[i]:
@@ -486,7 +483,6 @@ def val_model(model, dataloaders, optimizer, num_classes, criterion, binary, out
   sn.set(font_scale = 1)
   sn.heatmap(df_cmx, annot=True, fmt='g', cmap='Blues')
   plt.savefig(os.path.join(out_dir,"confusion_matrix.png"))
-  plt.show()
   sn.set(font_scale = 1)
 def create_output_directory(base_dir):
   i = 1
@@ -497,7 +493,7 @@ def create_output_directory(base_dir):
       break
     i += 1
   return output_dir
-def train(data_dir = "..", model_name = "aaa", output_name = "aaa", num_classes = 2, batch_size = 2, num_epochs = 2, feature_extract = False, input_size = 224, binary = True, last = True, data_transforms = {}):
+def train(data_dir = "..", model_name = "aaa", output_name = "aaa", num_classes = 2, batch_size = 2, num_epochs = 2, feature_extract = False, binary = True, last = True, data_transforms = {}):
   output_base_dir = os.path.join("runs/train",output_name)
   output_directory = create_output_directory(output_base_dir)
 
@@ -575,7 +571,6 @@ def train(data_dir = "..", model_name = "aaa", output_name = "aaa", num_classes 
   plt.grid(True)
   plt.legend()
   plt.savefig(os.path.join(output_directory, "acc.png"))
-  plt.show()
 
   save_txtfile(train_acc_hist, os.path.join(output_directory,"train_acc_hist.txt"))
   save_txtfile(val_acc_hist, os.path.join(output_directory,"val_acc_hist.txt"))
