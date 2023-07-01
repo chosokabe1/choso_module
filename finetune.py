@@ -5,37 +5,37 @@ import numpy as np
 
 def main():
 # 5分割交差検証　例えばfold1の下に各クラスのフォルダがある
-    # data_dir = [r"D:\ex\egg\data\jpeg\halfway\fold1"
-    #             ,r"D:\ex\egg\data\jpeg\halfway\fold2"
-    #             ,r"D:\ex\egg\data\jpeg\halfway\fold3"
-    #             ,r"D:\ex\egg\data\jpeg\halfway\fold4"
-    #             ,r"D:\ex\egg\data\jpeg\halfway\fold5"]
+    data_dir = [r"D:\ex\egg\data\jpeg\halfway\fold1"
+                ,r"D:\ex\egg\data\jpeg\halfway\fold2"
+                ,r"D:\ex\egg\data\jpeg\halfway\fold3"
+                ,r"D:\ex\egg\data\jpeg\halfway\fold4"
+                ,r"D:\ex\egg\data\jpeg\halfway\fold5"]
     
     data_dir = [r"D:\ex\egg\data\dtd\train_val"]
 
-    # model_list = ["efficientnet-b5"]
-    # input_size = 456
+    model_list = ["efficientnet-b5"]
+    input_size = 456
 
     model_list = ["efficientnet-b0"]
     input_size = 224 # modelに応じて変える必要あり
 
     '''入力1channel'''
-    # data_transforms = {
-    #     'train': transforms.Compose([
-    #         transforms.RandomHorizontalFlip(), # データ拡張
-    #         transforms.RandomVerticalFlip(), # データ拡張
-    #         transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1), # データ 拡張
-    #         transforms.RandomRotation(degrees=(0,360),expand=True), # データ拡張
-    #         transforms.Resize((input_size,input_size)),
-    #         transforms.Grayscale(), # グレースケールの場合。
-    #         transforms.ToTensor(), 
-    #     ]),
-    #     'val': transforms.Compose([
-    #         transforms.Resize((input_size,input_size)),
-    #         transforms.Grayscale(), # グレースケールの場合
-    #         transforms.ToTensor(),
-    #     ]),
-    # }
+    data_transforms = {
+        'train': transforms.Compose([
+            transforms.RandomHorizontalFlip(), # データ拡張
+            transforms.RandomVerticalFlip(), # データ拡張
+            transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1), # データ 拡張
+            transforms.RandomRotation(degrees=(0,360),expand=True), # データ拡張
+            transforms.Resize((input_size,input_size)),
+            transforms.Grayscale(), # グレースケールの場合。
+            transforms.ToTensor(), 
+        ]),
+        'val': transforms.Compose([
+            transforms.Resize((input_size,input_size)),
+            transforms.Grayscale(), # グレースケールの場合
+            transforms.ToTensor(),
+        ]),
+    }
 
     '''入力3channel'''
     data_transforms = {

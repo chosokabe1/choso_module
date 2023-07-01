@@ -2,8 +2,36 @@ from efficientnet_pytorch import EfficientNet
 from torchvision import datasets, models, transforms
 import torch.nn as nn
 import sys
+import timm
+import torch
+from typing import Tuple, Optional
+import torch.nn.functional as F
 
+def _calc_same_pad(i: int, k: int, s: int, d: int):
+    return max((-(i // -s) - 1) * s + (k - 1) * d + 1 - i, 0)
 
+def conv2d_same(
+        x, weight: torch.Tensor, bias: Optional[torch.Tensor] = None, stride: Tuple[int, int] = (1, 1),
+        padding: Tuple[int, int] = (0, 0), dilation: Tuple[int, int] = (1, 1), groups: int = 1):
+    ih, iw = x.size()[-2:]
+    kh, kw = weight.size()[-2:]
+    pad_h = _calc_same_pad(ih, kh, stride[0], dilation[0])
+    pad_w = _calc_same_pad(iw, kw, stride[1], dilation[1])
+    x = F.pad(x, [pad_w // 2, pad_w - pad_w // 2, pad_h // 2, pad_h - pad_h // 2])
+    return F.conv2d(x, weight, bias, stride, (0, 0), dilation, groups)
+
+class Conv2dSame(nn.Conv2d):
+    """ Tensorflow like 'SAME' convolution wrapper for 2D convolutions
+    """
+
+    # pylint: disable=unused-argument
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1,
+                 padding=0, dilation=1, groups=1, bias=True):
+        super(Conv2dSame, self).__init__(
+            in_channels, out_channels, kernel_size, stride, 0, dilation, groups, bias)
+
+    def forward(self, x):
+        return conv2d_same(x, self.weight, self.bias, self.stride, self.padding, self.dilation, self.groups)
 def set_parameter_requires_grad(model, feature_extracting):
   if feature_extracting:
     for param in model.parameters():
@@ -135,17 +163,29 @@ def main(model_name, num_classes, feature_extract, use_pretrained=True, binary=F
     num_ftrs = model_ft._fc.in_features
     model_ft._fc = nn.Linear(num_ftrs, num_classes)
 
-  elif model_name == "efficientnetv2-s":
-    model_ft = EfficientNet.from_pretrained('efficientnetv2-s')
-    num_ftrs = model_ft._fc.in_features
-    model_ft._fc = nn.Linear(num_ftrs, num_classes)
-    input_size = 384  # EfficientNetV2-Sのデフォルト入力サイズ
-  elif model_name == "efficientnetv2m":
-    model_ft = EfficientNet.from_pretrained('efficientnetv2-m')
+  elif "efficientnetv" in model_name:
+    first_layer_out_channels_map = {
+      "efficientnetv2-s": 24,
+      "efficientnetv2-m": 24,
+      "efficientnetv2-l": 32,
+    }
+    if model_name == "efficientnetv2-s":
+      model_ft = timm.create_model('tf_efficientnetv2_s', pretrained=True)
+      input_size = 384  # EfficientNetV2-Sのデフォルト入力サイズ
+    elif model_name == "efficientnetv2-m":
+      model_ft = timm.create_model('tf_efficientnetv2_m', pretrained=True)
+      input_size = 480  # EfficientNetV2-mのデフォルト入力サイズ
+    elif model_name == "efficientnetv2-l":
+      model_ft = timm.create_model('tf_efficientnetv2_l', pretrained=True)
+      input_size = 480  # EfficientNetV2-mのデフォルト入力サイズ
+
+    if binary:
+      out_channels = first_layer_out_channels_map[model_name]
+      model_ft.conv_stem = Conv2dSame(1, out_channels, kernel_size=3, stride=2, bias=False)
+
     set_parameter_requires_grad(model_ft, feature_extract)
-    num_ftrs = model_ft._fc.in_features
+    num_ftrs = model_ft.classifier.in_features
     model_ft._fc = nn.Linear(num_ftrs, num_classes)
-    input_size = 480
     
   elif model_name == "alexnet":
     """ Alexnet
