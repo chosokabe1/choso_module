@@ -424,9 +424,16 @@ def tensor_to_np(inp, type):
 def false_img_save(pred, label, input, false_img_count, out_dir, class_names):
   pil_img = Image.fromarray(input)
   # print(pred,label,class_names)
-
-  makedir(out_dir + 'error/pred_' + str(class_names[pred.item()]) + '_label_' + str(class_names[label.item()]))
-  pil_img.save(out_dir + f'error/pred_{class_names[pred.item()]}_label_{class_names[label.item()]}/{false_img_count}.jpg')
+  print("Length of class_names:", len(class_names))
+  print("Max value in preds:", torch.max(pred).item())
+  print("Max value in labels:", torch.max(label).item())
+  # makedir(out_dir + 'error/pred_' + str(class_names[pred.item()]) + '_label_' + str(class_names[label.item()]))
+  # pil_img.save(out_dir + f'error/pred_{class_names[pred.item()]}_label_{class_names[label.item()]}/{false_img_count}.jpg')
+  try:
+    makedir(out_dir + 'error/pred_' + str(class_names[pred.item()]) + '_label_' + str(class_names[label.item()]))
+    pil_img.save(out_dir + f'error/pred_{class_names[pred.item()]}_label_{class_names[label.item()]}/{false_img_count}.jpg')
+  except IndexError:
+    print(f'IndexError for pred {pred.item()} or label {label.item()}. Continuing...')
 
 def save_txtfile(data, outpath):
   file = outpath
