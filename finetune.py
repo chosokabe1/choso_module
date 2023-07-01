@@ -4,24 +4,28 @@ import csv
 import numpy as np
 
 def main():
-# 5分割交差検証　例えばfold1の下に各クラスのフォルダがある
+    # 5分割交差検証　例えばfold1の下に各クラスのフォルダがある
     data_dir = [r"D:\ex\egg\data\jpeg\halfway\fold1"
                 ,r"D:\ex\egg\data\jpeg\halfway\fold2"
                 ,r"D:\ex\egg\data\jpeg\halfway\fold3"
                 ,r"D:\ex\egg\data\jpeg\halfway\fold4"
                 ,r"D:\ex\egg\data\jpeg\halfway\fold5"]
-    
-    data_dir = [r"D:\ex\egg\data\dtd\train_val"]
 
-    model_list = ["efficientnet-b5"]
-    input_size = 456
+    # 交差検証なし
+    # data_dir = [r"D:\ex\egg\data\dtd\train_val"]
 
-    model_list = ["efficientnet-b0"]
-    input_size = 224 # modelに応じて変える必要あり
+    model_list = ["efficientnetv2-l"]
+    input_size = 480
+    # model_list = ["efficientnet-b5"]
+    # input_size = 456
+
+    # model_list = ["efficientnet-b0"]
+    # input_size = 224 # modelに応じて変える必要あり
 
     '''入力1channel'''
     data_transforms = {
         'train': transforms.Compose([
+            transforms.Resize((input_size,input_size)),
             transforms.RandomHorizontalFlip(), # データ拡張
             transforms.RandomVerticalFlip(), # データ拡張
             transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1), # データ 拡張
@@ -38,23 +42,23 @@ def main():
     }
 
     '''入力3channel'''
-    data_transforms = {
-        'train': transforms.Compose([
-            transforms.Resize((input_size,input_size)),
-            transforms.RandomHorizontalFlip(),
-            transforms.RandomVerticalFlip(),
-            transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
-            # transforms.RandomRotation(degrees=(0,360),expand=True),
-            transforms.Resize((input_size,input_size)),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        ]),
-        'val': transforms.Compose([
-            transforms.Resize((input_size,input_size)),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        ]),
-    }
+    # data_transforms = {
+    #     'train': transforms.Compose([
+    #         transforms.Resize((input_size,input_size)),
+    #         transforms.RandomHorizontalFlip(),
+    #         transforms.RandomVerticalFlip(),
+    #         transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
+    #         # transforms.RandomRotation(degrees=(0,360),expand=True),
+    #         transforms.Resize((input_size,input_size)),
+    #         transforms.ToTensor(),
+    #         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    #     ]),
+    #     'val': transforms.Compose([
+    #         transforms.Resize((input_size,input_size)),
+    #         transforms.ToTensor(),
+    #         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    #     ]),
+    # }
 
     with open('20230412-2.csv', 'w', newline="") as f: #　正解率推移をcsvに保存する
         writer = csv.writer(f)
@@ -65,13 +69,13 @@ def main():
                 if "large" in model:
                     batch_size = 8
                 else:
-                    batch_size = 64 # バッチサイズはここで設定する
+                    batch_size = 16 # バッチサイズはここで設定する
 
                 val_acc_hist = chosoai.train(data_dir=data,model_name=model,
-                            output_name=  "dtd_" + model+"-fold"+str(id+1),
+                            output_name=  "resize_" + model+"-fold"+str(id+1),
                             num_classes=2,
-                            batch_size = batch_size, num_epochs = 10,
-                            feature_extract = False, binary = False, last = True, 
+                            batch_size = batch_size, num_epochs = 50,
+                            feature_extract = False, binary = True, last = True, 
                             data_transforms = data_transforms
                             ) # epoch，feature_extract，binary，lastをここで設定する。
             #binaryはグレースケールか否か，グレースケールならTrue，カラーならFalse
