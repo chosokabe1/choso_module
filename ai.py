@@ -1,6 +1,7 @@
 from __future__ import print_function
 from __future__ import division
-from . import initialize_model
+# from . import initialize_model
+import initialize_model
 from torch.utils.data import Dataset
 from PIL import Image
 import os
@@ -231,7 +232,7 @@ def save_txtfile(data, outpath):
 
   fileobj.close()
 
-def val_model(model, dataloaders, optimizer, num_classes, criterion, binary, out_dir, class_names):
+def val_model(model, dataloaders, optimizer, num_classes, criterion, binary, out_dir, class_names, out_save):
   false_img_count = 0
   phase = 'val'
   confusion_matrix = torch.zeros(num_classes, num_classes)
@@ -262,7 +263,8 @@ def val_model(model, dataloaders, optimizer, num_classes, criterion, binary, out
           input = tensor_to_np(inputs.cpu().data[i], type)
           input *= 255
           input = input[0].astype(np.uint8)
-          false_img_save(preds[i], labels[i], input, false_img_count, out_dir, class_names)
+          if out_save:
+            false_img_save(preds[i], labels[i], input, false_img_count, out_dir, class_names)
           false_img_count += 1
      #######################################################
 
@@ -270,12 +272,15 @@ def val_model(model, dataloaders, optimizer, num_classes, criterion, binary, out
         confusion_matrix[t_confusion_matrix.long(), p_confusion_matrix.long()] += 1
 
   confusion_matrix_numpy = confusion_matrix.to('cpu').detach().numpy().copy()
-  df_cmx = pd.DataFrame(confusion_matrix_numpy, index=class_names, columns=class_names)
-  plt.figure(figsize = (12, 7))
-  sn.set(font_scale = 1)
-  sn.heatmap(df_cmx, annot=True, fmt='g', cmap='Blues')
-  plt.savefig(os.path.join(out_dir,"confusion_matrix.png"))
-  sn.set(font_scale = 1)
+  if out_save:
+    df_cmx = pd.DataFrame(confusion_matrix_numpy, index=class_names, columns=class_names)
+    plt.figure(figsize = (12, 7))
+    sn.set(font_scale = 1)
+    sn.heatmap(df_cmx, annot=True, fmt='g', cmap='Blues')
+    plt.savefig(os.path.join(out_dir,"confusion_matrix.png"))
+    sn.set(font_scale = 1)
+
+  return confusion_matrix_numpy
 
 def create_output_directory(base_dir):
   i = 1
@@ -286,11 +291,10 @@ def create_output_directory(base_dir):
       break
     i += 1
   return output_dir
-def train(data_dir = "..", model_name = "aaa", output_name = "aaa", num_classes = 2, batch_size = 2, num_epochs = 2, feature_extract = False, binary = True, last = True, data_transforms = {}):
-  output_base_dir = os.path.join("runs/train",output_name)
-  output_directory = create_output_directory(output_base_dir)
 
-  makedir(output_directory)
+def train(data_dir = "..", model_name = "aaa", output_name = "aaa", num_classes = 2, batch_size = 2, num_epochs = 2, feature_extract = False, binary = True, last = True, data_transforms = {}, out_save=True):
+
+
   if 'vit' in model_name:
     model_ft = ViT(model_name=model_name, binary=binary, pretrained=True, num_classes = num_classes)
   else:
@@ -328,8 +332,12 @@ def train(data_dir = "..", model_name = "aaa", output_name = "aaa", num_classes 
 
   # Train and evaluate
   model_ft, train_acc_hist_tensor, val_acc_hist_tensor = train_model(model_ft, dataloaders_dict, criterion, optimizer_ft, last, num_epochs=num_epochs, is_inception=(model_name=="inception"))
+  if out_save:
+    output_base_dir = os.path.join("runs/train",output_name)
+    output_directory = create_output_directory(output_base_dir)
+    makedir(output_directory)
 
-  val_model(model_ft, dataloaders_dict, optimizer_ft, num_classes, criterion, binary, output_directory, class_names)
+  confusion_matrix = val_model(model_ft, dataloaders_dict, optimizer_ft, num_classes, criterion, binary, output_directory, class_names,out_save)
 
   train_acc_hist = []
   val_acc_hist = []
@@ -340,19 +348,18 @@ def train(data_dir = "..", model_name = "aaa", output_name = "aaa", num_classes 
   for i in val_acc_hist_tensor:
     val_acc_hist.append(float(i.item()))
 
-  plt.figure(figsize = (12, 7))
-  plt.plot(train_acc_hist, label="train_accuracy")
-  plt.plot(val_acc_hist, label="test_accuracy")
-  plt.title("Accuracy vs Epoch")
-  plt.xlabel("epoch")
-  plt.ylabel("accuracy")
-  plt.grid(True)
-  plt.legend()
-  plt.savefig(os.path.join(output_directory, "acc.png"))
+  if out_save:
+    plt.figure(figsize = (12, 7))
+    plt.plot(train_acc_hist, label="train_accuracy")
+    plt.plot(val_acc_hist, label="test_accuracy")
+    plt.title("Accuracy vs Epoch")
+    plt.xlabel("epoch")
+    plt.ylabel("accuracy")
+    plt.grid(True)
+    plt.legend()
+    plt.savefig(os.path.join(output_directory, "acc.png"))
+    save_txtfile(train_acc_hist, os.path.join(output_directory,"train_acc_hist.txt"))
+    save_txtfile(val_acc_hist, os.path.join(output_directory,"val_acc_hist.txt"))
+    torch.save(model_ft.state_dict(), os.path.join(output_directory,'model_weights.pth'))
 
-  save_txtfile(train_acc_hist, os.path.join(output_directory,"train_acc_hist.txt"))
-  save_txtfile(val_acc_hist, os.path.join(output_directory,"val_acc_hist.txt"))
-
-  torch.save(model_ft.state_dict(), os.path.join(output_directory,'model_weights.pth'))
-
-  return val_acc_hist
+  return val_acc_hist, confusion_matrix

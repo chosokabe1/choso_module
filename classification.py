@@ -2,6 +2,7 @@ from efficientnet_pytorch import EfficientNet
 import torch
 import torch.nn as nn
 import ai as chosoai
+import initialize_model
 import cv2
 import matplotlib.pyplot as plt
 from torchvision import datasets, models, transforms
@@ -44,7 +45,7 @@ def classification_img(model, binary, input_size, data_transforms, image_path, s
 def classification_dir(model_name, model_path, num_classes, binary, image_dir_path, save_file_path):
     os.makedirs(os.path.dirname(save_file_path), exist_ok=True)
     if binary == True:
-        model, input_size = chosoai.initialize_model(model_name=model_name, num_classes=num_classes, feature_extract=False, use_pretrained=True, binary=True)
+        model, input_size = initialize_model.main(model_name=model_name, num_classes=num_classes, feature_extract=False, use_pretrained=True, binary=True)
         model.load_state_dict(torch.load(model_path))
         model.eval()
         data_transforms = transforms.Compose([
@@ -54,7 +55,7 @@ def classification_dir(model_name, model_path, num_classes, binary, image_dir_pa
         ])
 
     else:
-        model, input_size = chosoai.initialize_model(model_name=model_name, num_classes=num_classes, feature_extract=False, use_pretrained=True)
+        model, input_size = initialize_model.main(model_name=model_name, num_classes=num_classes, feature_extract=False, use_pretrained=True)
         model.load_state_dict(torch.load(model_path))
         model.eval()
         data_transforms = transforms.Compose([
