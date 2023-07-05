@@ -336,6 +336,8 @@ def train(data_dir = "..", model_name = "aaa", output_name = "aaa", num_classes 
     output_base_dir = os.path.join("runs/train",output_name)
     output_directory = create_output_directory(output_base_dir)
     makedir(output_directory)
+  else:
+     output_directory = 'hoge'
 
   confusion_matrix = val_model(model_ft, dataloaders_dict, optimizer_ft, num_classes, criterion, binary, output_directory, class_names,out_save)
 
