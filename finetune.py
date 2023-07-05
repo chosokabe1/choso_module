@@ -42,7 +42,7 @@ def get_data_transforms(input_size, input_channels):
     else:
         raise ValueError("Input channels should be either 1 or 3.")
     return data_transforms
-def main(data_dir, model_list, input_size, batch_size, epochs, output_name, input_channels=3):
+def main(data_dir, model_list, input_size, batch_size, epochs, output_name, input_channels=3, out_save = True):
     data_transforms = get_data_transforms(input_size, input_channels)
     
     with open('20230412-2.csv', 'w', newline="") as f: 
