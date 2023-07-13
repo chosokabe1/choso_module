@@ -91,9 +91,9 @@ def main(model_name, num_classes, feature_extract, use_pretrained=True, binary=F
   #                                  use_absolute_pos_emb=True, drop_path_rate=0.1)
   #       input_size = 224
 
-  
-    if binary:
-        model_ft.patch_embed = nn.Conv2d(1, model_ft.embed_dim, kernel_size=model_ft.patch_size, stride=model_ft.patch_size, padding=0)
+    #swinのはなし
+    # if binary:
+    #     model_ft.patch_embed = nn.Conv2d(1, model_ft.embed_dim, kernel_size=model_ft.patch_size, stride=model_ft.patch_size, padding=0)
 
     set_parameter_requires_grad(model_ft, feature_extract)
 
