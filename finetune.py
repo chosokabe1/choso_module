@@ -84,9 +84,20 @@ if __name__ == '__main__':
     input_size = 224
     input_channels = 3  # 1 for grayscale, 3 for color
     batch_size = 16
-    epochs = 3
+    epochs = 1
+    output_name = "resize" #アウトプット保存の名前
+    main(resize_data_dir, model_list, input_size, batch_size, epochs, output_name, input_channels, last=False) 
+    # last = False　→　valで最高の結果のエポックのモデル・混同行列を保存する．
+    # last = True　→　valでラストのエポックのモデル・混同行列を保存する．
+
+    model_list = ["resnet18"]
+    input_size = 224
+    input_channels = 1  # 1 for grayscale, 3 for color
+    batch_size = 16
+    epochs = 1
     output_name = "resize" #アウトプット保存の名前
     main(resize_data_dir, model_list, input_size, batch_size, epochs, output_name, input_channels, last=False)
+
 
     model_list = ["efficientnetv2-s"]
     input_size = 384

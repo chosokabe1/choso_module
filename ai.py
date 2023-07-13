@@ -257,13 +257,18 @@ def val_model(model, dataloaders, optimizer, num_classes, criterion, binary, out
         if preds[i] != labels[i]:
           if binary:
             type = "gray"
+
           else:
             type = "imagenet"
 
           input = tensor_to_np(inputs.cpu().data[i], type)
           input *= 255
-          input = input[0].astype(np.uint8)
+          # input = input[0].astype(np.uint8)
+          input = input.astype(np.uint8)
+
           if out_save:
+            if type == "gray":
+              input = np.squeeze(input)
             false_img_save(preds[i], labels[i], input, false_img_count, out_dir, class_names)
           false_img_count += 1
      #######################################################
