@@ -1,7 +1,7 @@
 from __future__ import print_function
 from __future__ import division
-# from . import initialize_model
-import initialize_model
+from . import initialize_model
+# import initialize_model
 from torch.utils.data import Dataset
 from PIL import Image
 import os
@@ -297,9 +297,7 @@ def create_output_directory(base_dir):
     i += 1
   return output_dir
 
-def train(data_dir = "..", model_name = "aaa", output_name = "aaa", num_classes = 2, batch_size = 2, num_epochs = 2, feature_extract = False, binary = True, last = True, data_transforms = {}, out_save=True):
-
-
+def train(data_dir = "..", model_name = "aaa", output_name = "aaa", num_classes = 2, batch_size = 2, num_epochs = 2, feature_extract = False, binary = True, last = True, data_transforms = {}, out_save=True, class_weights=None):
   if 'vit' in model_name:
     model_ft = ViT(model_name=model_name, binary=binary, pretrained=True, num_classes = num_classes)
   else:
@@ -333,7 +331,10 @@ def train(data_dir = "..", model_name = "aaa", output_name = "aaa", num_classes 
   # optimizer_ft = optim.SGD(params_to_update, lr=0.001, momentum=0.9)
   optimizer_ft = torch.optim.Adam(params_to_update, lr=1e-4, weight_decay=1e-5)
   # Setup the loss fxn
-  criterion = nn.CrossEntropyLoss()
+  if class_weights is None:
+    criterion = nn.CrossEntropyLoss()
+  else:
+    criterion = nn.CrossEntropyLoss(weight=class_weights)
 
   # Train and evaluate
   model_ft, train_acc_hist_tensor, val_acc_hist_tensor = train_model(model_ft, dataloaders_dict, criterion, optimizer_ft, last, num_epochs=num_epochs, is_inception=(model_name=="inception"))
