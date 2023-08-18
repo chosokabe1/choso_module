@@ -163,6 +163,7 @@ def main(model_name, num_classes, feature_extract, use_pretrained=True, binary=F
     set_parameter_requires_grad(model_ft, feature_extract)
     num_ftrs = model_ft._fc.in_features
     model_ft._fc = nn.Linear(num_ftrs, num_classes)
+    # print(model_ft)
 
   elif "efficientnetv" in model_name:
     first_layer_out_channels_map = {

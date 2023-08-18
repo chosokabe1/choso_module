@@ -114,8 +114,7 @@ def train_model(model, dataloaders, criterion, optimizer, last, num_epochs=25, i
 
     train_acc_history = []
     val_acc_history = []
-    best_model_wts = copy.deepcopy(model.state_dict())
-    last_model_wts = copy.deepcopy(model.state_dict())
+    model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
 
     for epoch in range(num_epochs):
@@ -174,28 +173,24 @@ def train_model(model, dataloaders, criterion, optimizer, last, num_epochs=25, i
 
             if phase == 'train':
                 train_acc_history.append(epoch_acc)
+            else:
+                val_acc_history.append(epoch_acc)
 
             # deep copy the model
-            if phase == 'val' and epoch_acc > best_acc:
-                best_acc = epoch_acc
-                best_model_wts = copy.deepcopy(model.state_dict())
+            # If last=true, update model_wts only when the last time, and if last=false, update the highest accuracy rate
             if phase == 'val':
-                val_acc_history.append(epoch_acc)
-            
-            last_model_wts = copy.deepcopy(model.state_dict())
+                if last and epoch == num_epochs - 1:
+                    model_wts = copy.deepcopy(model.state_dict())
+                elif not last and epoch_acc > best_acc:
+                    best_acc = epoch_acc
+                    model_wts = copy.deepcopy(model.state_dict())
         print()
 
-    last_model_wts = copy.deepcopy(model.state_dict())
     time_elapsed = time.time() - since
     print('Training complete in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
     print('Best val Acc: {:4f}'.format(best_acc))
 
-    # load best model weights
-    if last:
-        model.load_state_dict(last_model_wts)
-    else:
-        model.load_state_dict(best_model_wts)
-
+    model.load_state_dict(model_wts) # changing to a model instance
     return model, train_acc_history, val_acc_history
 
 def tensor_to_np(inp, type):
@@ -244,38 +239,25 @@ def val_model(model, dataloaders, optimizer, num_classes, criterion, binary, out
     labels = labels.to(device)
     optimizer.zero_grad()
     with torch.set_grad_enabled(phase == 'train'):
-      # outputs = model(inputs)
       outputs = torch.nn.functional.softmax(model(inputs), dim=1)
-      loss = criterion(outputs, labels)
       _, preds = torch.max(outputs, 1)
-      # Add these print statements
-      # print("Outputs: ", outputs)
-      # print("Labels: ", labels)
-      # print("Predictions: ", preds)
-     #######################################################
       for i in range(inputs.size()[0]):
         if preds[i] != labels[i]:
           if binary:
             type = "gray"
-
           else:
             type = "imagenet"
-
           input = tensor_to_np(inputs.cpu().data[i], type)
           input *= 255
-          # input = input[0].astype(np.uint8)
           input = input.astype(np.uint8)
-
           if out_save:
             if type == "gray":
               input = np.squeeze(input)
             false_img_save(preds[i], labels[i], input, false_img_count, out_dir, class_names)
           false_img_count += 1
-     #######################################################
 
       for t_confusion_matrix, p_confusion_matrix in zip(labels.view(-1), preds.view(-1)):
         confusion_matrix[t_confusion_matrix.long(), p_confusion_matrix.long()] += 1
-
   confusion_matrix_numpy = confusion_matrix.to('cpu').detach().numpy().copy()
   if out_save:
     df_cmx = pd.DataFrame(confusion_matrix_numpy, index=class_names, columns=class_names)
@@ -284,7 +266,6 @@ def val_model(model, dataloaders, optimizer, num_classes, criterion, binary, out
     sn.heatmap(df_cmx, annot=True, fmt='g', cmap='Blues')
     plt.savefig(os.path.join(out_dir,"confusion_matrix.png"))
     sn.set(font_scale = 1)
-
   return confusion_matrix_numpy
 
 def create_output_directory(base_dir):
@@ -321,10 +302,9 @@ def train(data_dir = "..", model_name = "aaa", output_name = "aaa", num_classes 
       if param.requires_grad == True:
         params_to_update.append(param)
         # print("\t",name)
-  else:
-    for name,param in model_ft.named_parameters():
-      if param.requires_grad == True:
-         hoge = 1
+  # else:
+    # for name,param in model_ft.named_parameters():
+      # if param.requires_grad == True:
         # print("\t",name)
 
   # Observe that all parameters are being optimized
@@ -342,8 +322,6 @@ def train(data_dir = "..", model_name = "aaa", output_name = "aaa", num_classes 
     output_base_dir = os.path.join("runs/train",output_name)
     output_directory = create_output_directory(output_base_dir)
     makedir(output_directory)
-  else:
-     output_directory = 'hoge'
 
   confusion_matrix = val_model(model_ft, dataloaders_dict, optimizer_ft, num_classes, criterion, binary, output_directory, class_names,out_save)
 
