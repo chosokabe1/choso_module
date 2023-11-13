@@ -39,7 +39,6 @@ def classification_dir(model_name, model_path, num_classes, binary, image_dir_pa
     os.makedirs(os.path.dirname(save_file_path), exist_ok=True)
     if binary == True:
         model, input_size = initialize_model.main(model_name=model_name, num_classes=num_classes, feature_extract=False, use_pretrained=True, binary=True)
-
     else:
         model, input_size = initialize_model.main(model_name=model_name, num_classes=num_classes, feature_extract=False, use_pretrained=True)
         

@@ -182,10 +182,10 @@ def train_model(model, dataloaders, criterion, optimizer, last, num_epochs=25, i
                 if last and epoch == num_epochs - 1:
                     model_wts = copy.deepcopy(model.state_dict())
                 elif not last and epoch_acc > best_acc:
-                    best_acc = epoch_acc
                     model_wts = copy.deepcopy(model.state_dict())
+                if epoch_acc > best_acc:
+                    best_acc = epoch_acc
         print()
-
     time_elapsed = time.time() - since
     print('Training complete in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
     print('Best val Acc: {:4f}'.format(best_acc))
@@ -229,11 +229,10 @@ def save_txtfile(data, outpath):
 
 def val_model(model, dataloaders, optimizer, num_classes, criterion, binary, out_dir, class_names, out_save):
   false_img_count = 0
-  phase = 'val'
   confusion_matrix = torch.zeros(num_classes, num_classes)
   model.eval()
   device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
+  phase = 'val'
   for inputs, labels in dataloaders[phase]:
     inputs = inputs.to(device)
     labels = labels.to(device)
@@ -281,6 +280,7 @@ def create_output_directory(base_dir):
 def train(data_dir = "..", model_name = "aaa", output_name = "aaa", num_classes = 2, batch_size = 2, num_epochs = 2, feature_extract = False, binary = True, last = True, data_transforms = {}, out_save=True, class_weights=None):
   if 'vit' in model_name:
     model_ft = ViT(model_name=model_name, binary=binary, pretrained=True, num_classes = num_classes)
+    print(model_ft)
   else:
      model_ft, input_size = initialize_model.main(model_name, num_classes, feature_extract, use_pretrained=True, binary=binary)
   
