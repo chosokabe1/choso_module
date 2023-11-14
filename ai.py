@@ -120,12 +120,15 @@ def train_model(model, dataloaders, criterion, optimizer, last, num_epochs=25, i
     for epoch in range(num_epochs):
         print('Epoch {}/{}'.format(epoch, num_epochs - 1))
         print('-' * 10)
-
+        # print('b')
         # Each epoch has a training and validation phase
         for phase in ['train', 'val']:
+            # print('c')
             if phase == 'train':
+                # print('train')
                 model.train()  # Set model to training mode
             else:
+                # print('val')
                 model.eval()   # Set model to evaluate mode
 
             running_loss = 0.0
@@ -133,6 +136,7 @@ def train_model(model, dataloaders, criterion, optimizer, last, num_epochs=25, i
 
             # Iterate over data.
             for inputs, labels in dataloaders[phase]:
+                # print('a')
                 inputs = inputs.to(device)
                 labels = labels.to(device)
 
@@ -268,16 +272,17 @@ def val_model(model, dataloaders, optimizer, num_classes, criterion, binary, out
   return confusion_matrix_numpy
 
 def create_output_directory(base_dir):
+  output_dir = base_dir
   i = 1
   while True:
-    output_dir = base_dir + f'output_{i}'
     if not os.path.exists(output_dir):
       os.makedirs(output_dir)
       break
+    output_dir = f"{base_dir}_{i}"
     i += 1
   return output_dir
 
-def train(data_dir = "..", model_name = "aaa", output_name = "aaa", num_classes = 2, batch_size = 2, num_epochs = 2, feature_extract = False, binary = True, last = True, data_transforms = {}, out_save=True, class_weights=None):
+def train(data_dir = "..", model_name = "aaa", output_name = "aaa", num_classes = 2, batch_size = 2, num_epochs = 2, feature_extract = False, binary = True, last = True, data_transforms = {}, out_save=True, out_model=False, class_weights=None, dataloaders_dict = None, class_names=None):
   if 'vit' in model_name:
     model_ft = ViT(model_name=model_name, binary=binary, pretrained=True, num_classes = num_classes)
     print(model_ft)
@@ -288,10 +293,10 @@ def train(data_dir = "..", model_name = "aaa", output_name = "aaa", num_classes 
   model_ft = model_ft.to(device)
 
   # Create training and validation datasets
-  image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x), data_transforms[x]) for x in ['train', 'val']}
+  # image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x), data_transforms[x]) for x in ['train', 'val']}
   # Create training and validation dataloaders
-  dataloaders_dict = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=batch_size, shuffle=True, num_workers=4) for x in ['train', 'val']}
-  class_names = image_datasets['train'].classes
+  # dataloaders_dict = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=batch_size, shuffle=True, num_workers=4) for x in ['train', 'val']}
+  # class_names = image_datasets['train'].classes
   # Detect if we have a GPU available
   device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -346,6 +351,7 @@ def train(data_dir = "..", model_name = "aaa", output_name = "aaa", num_classes 
     plt.savefig(os.path.join(output_directory, "acc.png"))
     save_txtfile(train_acc_hist, os.path.join(output_directory,"train_acc_hist.txt"))
     save_txtfile(val_acc_hist, os.path.join(output_directory,"val_acc_hist.txt"))
-    torch.save(model_ft.state_dict(), os.path.join(output_directory,'model_weights.pth'))
+    if out_model:
+      torch.save(model_ft.state_dict(), os.path.join(output_directory,'model_weights.pth'))
 
   return val_acc_hist, confusion_matrix

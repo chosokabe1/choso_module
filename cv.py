@@ -206,3 +206,14 @@ def folder_bright_kakutyou(in_folder, out_folder):
 
     cv2.imwrite(os.path.join(out_folder, os.path.basename(in_path)), img)
     cv2.imwrite(os.path.join(out_folder, os.path.splitext(os.path.basename(in_path))[0] +'_bright.jpg'), gamma_img)
+
+def create_output_directory(base_dir):
+  output_dir = base_dir
+  i = 1
+  while True:
+    if not os.path.exists(output_dir):
+      os.makedirs(output_dir)
+      break
+    output_dir = f"{base_dir}_{i}"
+    i += 1
+  return output_dir
