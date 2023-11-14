@@ -145,6 +145,18 @@ def padding_0_min_size_img(img, min_size):
   else:
     return img
 
+def add_padding(img, desired_size):
+  old_size = img.size
+
+  ratio = float(desired_size)/max(old_size)
+  new_size = tuple([int(x*ratio) for x in old_size])
+
+  img = img.resize(new_size, Image.ANTIALIAS)
+
+  new_img = Image.new("RGB", (desired_size, desired_size))
+  new_img.paste(img, ((desired_size-new_size[0])//2,
+                      (desired_size-new_size[1])//2))
+  return new_img
 
 def make_square_file(in_path, out_path):
   out_img_path = out_path + "\\" + os.path.basename(in_path)

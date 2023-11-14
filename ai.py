@@ -282,7 +282,7 @@ def create_output_directory(base_dir):
     i += 1
   return output_dir
 
-def train(data_dir = "..", model_name = "aaa", output_name = "aaa", num_classes = 2, batch_size = 2, num_epochs = 2, feature_extract = False, binary = True, last = True, data_transforms = {}, out_save=True, out_model=False, class_weights=None, dataloaders_dict = None, class_names=None):
+def train(model_name = "aaa", output_name = "aaa", num_classes = 2, batch_size = 2, num_epochs = 2, feature_extract = False, binary = True, last = True, data_transforms = None, out_save=True, out_model=False, class_weights=None, dataloaders_dict = None, class_names=None):
   if 'vit' in model_name:
     model_ft = ViT(model_name=model_name, binary=binary, pretrained=True, num_classes = num_classes)
     print(model_ft)
